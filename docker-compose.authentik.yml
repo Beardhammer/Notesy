@@ -21,7 +21,7 @@ services:
       FB_USERS: ${FB_USERS}
       FB_BRANDING: ${FB_BRANDING:-Notes}
       FB_BRANDING_THEME: ${FB_BRANDING_THEME:-dark}
-      FB_ONLYOFFICE_URL: /onlyoffice
+      FB_ONLYOFFICE_URL: /oo
       FB_ONLYOFFICE_JWTSECRET: ${ONLYOFFICE_JWT_SECRET}
       FB_CODIMD_URL: /md
       PUID: 1000
