@@ -11,7 +11,8 @@ COPY --chown=hackmd:hackmd . /home/hackmd/app
 
 RUN cp config.json.example config.json && \
     cp .sequelizerc.example .sequelizerc
-
+    
+RUN chmod +x bin/* deployments/docker-entrypoint.sh
 RUN ./bin/setup
 RUN npm run build
 
