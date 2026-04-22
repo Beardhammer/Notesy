@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="notebookGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2a2a2a"/>
+      <stop offset="100%" style="stop-color:#1a1a1a"/>
+    </linearGradient>
+    <linearGradient id="pageGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f5f5f0"/>
+      <stop offset="100%" style="stop-color:#e8e8e0"/>
+    </linearGradient>
+    <linearGradient id="coverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B0000"/>
+      <stop offset="100%" style="stop-color:#5c0000"/>
+    </linearGradient>
+    <filter id="shadow" x="-5%" y="-5%" width="115%" height="115%">
+      <feDropShadow dx="3" dy="3" stdDeviation="6" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+
+  <!-- Back cover -->
+  <rect x="120" y="60" width="300" height="400" rx="8" ry="8" fill="url(#coverGrad)" filter="url(#shadow)"/>
+
+  <!-- Pages (slightly offset) -->
+  <rect x="130" y="55" width="280" height="395" rx="4" ry="4" fill="#eaeae2"/>
+  <rect x="135" y="50" width="275" height="395" rx="4" ry="4" fill="url(#pageGrad)"/>
+
+  <!-- Page lines -->
+  <g stroke="#c0c0b8" stroke-width="1.5" opacity="0.6">
+    <line x1="165" y1="120" x2="380" y2="120"/>
+    <line x1="165" y1="148" x2="380" y2="148"/>
+    <line x1="165" y1="176" x2="380" y2="176"/>
+    <line x1="165" y1="204" x2="380" y2="204"/>
+    <line x1="165" y1="232" x2="380" y2="232"/>
+    <line x1="165" y1="260" x2="380" y2="260"/>
+    <line x1="165" y1="288" x2="380" y2="288"/>
+    <line x1="165" y1="316" x2="380" y2="316"/>
+    <line x1="165" y1="344" x2="380" y2="344"/>
+    <line x1="165" y1="372" x2="380" y2="372"/>
+    <line x1="165" y1="400" x2="380" y2="400"/>
+  </g>
+
+  <!-- Red margin line -->
+  <line x1="165" y1="75" x2="165" y2="440" stroke="#cc3333" stroke-width="2" opacity="0.5"/>
+
+  <!-- Spiral binding rings -->
+  <g fill="none" stroke="#555" stroke-width="5" stroke-linecap="round">
+    <path d="M 128,95 C 108,95 108,115 128,115"/>
+    <path d="M 128,140 C 108,140 108,160 128,160"/>
+    <path d="M 128,185 C 108,185 108,205 128,205"/>
+    <path d="M 128,230 C 108,230 108,250 128,250"/>
+    <path d="M 128,275 C 108,275 108,295 128,295"/>
+    <path d="M 128,320 C 108,320 108,340 128,340"/>
+    <path d="M 128,365 C 108,365 108,385 128,385"/>
+    <path d="M 128,410 C 108,410 108,430 128,430"/>
+  </g>
+  <!-- Ring fronts (over notebook) -->
+  <g fill="none" stroke="#666" stroke-width="4.5" stroke-linecap="round">
+    <path d="M 128,95 C 148,95 148,115 128,115"/>
+    <path d="M 128,140 C 148,140 148,160 128,160"/>
+    <path d="M 128,185 C 148,185 148,205 128,205"/>
+    <path d="M 128,230 C 148,230 148,250 128,250"/>
+    <path d="M 128,275 C 148,275 148,295 128,295"/>
+    <path d="M 128,320 C 148,320 148,340 128,340"/>
+    <path d="M 128,365 C 148,365 148,385 128,385"/>
+    <path d="M 128,410 C 148,410 148,430 128,430"/>
+  </g>
+
+  <!-- Terminal/code text on lines (hacker theme) -->
+  <g font-family="'Courier New', monospace" font-size="14" fill="#333" opacity="0.7">
+    <text x="175" y="146">$ nmap -sV 10.0.0.0/24</text>
+    <text x="175" y="174" fill="#8B0000">root@kali:~#</text>
+    <text x="175" y="202">hydra -l admin -P pass.txt</text>
+    <text x="175" y="230" fill="#006400">&#x2713; shell obtained</text>
+    <text x="175" y="258">sqlmap --dbs --batch</text>
+    <text x="175" y="286" fill="#8B0000">msfconsole</text>
+    <text x="175" y="314">set RHOSTS target</text>
+    <text x="175" y="342" fill="#006400">&#x2713; privesc complete</text>
+    <text x="175" y="370">cat /etc/shadow</text>
+  </g>
+
+  <!-- Skull icon on cover top area -->
+  <g transform="translate(272, 82)" fill="#cc3333" opacity="0.9">
+    <!-- Simple skull -->
+    <ellipse cx="0" cy="0" rx="22" ry="18" fill="none" stroke="#cc3333" stroke-width="3"/>
+    <circle cx="-8" cy="-3" r="5" fill="#cc3333"/>
+    <circle cx="8" cy="-3" r="5" fill="#cc3333"/>
+    <path d="M -5,8 L 0,6 L 5,8" fill="none" stroke="#cc3333" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- Cursor blink on last line -->
+  <rect x="175" y="388" width="10" height="16" fill="#00cc00" opacity="0.8">
+    <animate attributeName="opacity" values="0.8;0;0.8" dur="1.2s" repeatCount="indefinite"/>
+  </rect>
+</svg>

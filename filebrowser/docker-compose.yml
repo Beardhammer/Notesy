@@ -1,0 +1,105 @@
+version: '3'
+
+networks:
+  internal:
+
+volumes:
+  onlyoffice_data:
+  onlyoffice_log:
+  onlyoffice_lib:
+  onlyoffice_db:
+  onlyoffice_rabbitmq:
+  onlyoffice_redis:
+  codimd_db:
+
+services:
+  # -------------------
+  # File Browser
+  # -------------------
+  nginx:
+    image: nginx:latest
+    depends_on:
+      - onlyoffice
+      - filebrowser
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/server.key:/etc/nginx/server.key
+      - ./nginx/server.crt:/etc/nginx/server.crt
+    ports:
+      - 8085:443
+    networks:
+      - default
+      - internal
+
+
+  # -------------------
+  # File Browser
+  # -------------------
+  filebrowser:
+    image: filebrowser:latest
+    environment:
+      FB_DEFAULT_USER_PASSWORD: abc123
+      FB_USERS: test1 test2 test3
+      FB_BRANDING: Local Instance
+      PUID: 1000
+      PGID: 1000
+    depends_on:
+      - onlyoffice
+    volumes:
+      - /tmp/data:/srv
+      - ./backups:/backups
+    restart: unless-stopped
+    build:
+      context: "."
+      dockerfile: Dockerfile
+      no_cache: true
+      tags:
+        - filebrowser:latest
+    networks:
+      - internal
+
+
+  # -------------------
+  # Only Office
+  # -------------------
+  onlyoffice:
+    image: onlyoffice/documentserver:latest
+    environment:
+      JWT_SECRET: ThisIsMyTheBestJWTSecretEverMade
+    volumes:
+      - ./onlyoffice/default.json:/etc/onlyoffice/documentserver/default.json
+      - onlyoffice_data:/var/www/onlyoffice/Data
+      - onlyoffice_log:/var/log/onlyoffice
+      - onlyoffice_lib:/var/lib/onlyoffice
+      - onlyoffice_db:/var/lib/postgresql
+      - onlyoffice_rabbitmq:/var/lib/rabbitmq
+      - onlyoffice_redis:/var/lib/redis
+    networks:
+      - internal
+    restart: unless-stopped
+
+  # -------------------
+  # CodiMD
+  # -------------------
+  codimd:
+    image: registry.gitlab.com/coderepo/forks/codimd
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - CMD_SESSION_SECRET="{{cmd_session_secret_random}}"
+      - CMD_CONFIG_FILE=/home/hackmd/app/config.json
+      - CMD_AUTO_MIGRATE=false
+      - CMD_ALLOW_ANONYMOUS=true
+      - CMD_ALLOW_ANONYMOUS_EDITS=true
+      - CMD_DEFAULT_PERMISSION=freely
+      - CMD_ALLOW_FREEURL=true
+    volumes:
+      - /tmp/data:/home/hackmd/app/public/docs
+      - codimd_db:/home/hackmd/app/database
+
+  # -------------------
+  # drawio
+  # -------------------
+  drawio:
+    image: jgraph/drawio
+    restart: unless-stopped

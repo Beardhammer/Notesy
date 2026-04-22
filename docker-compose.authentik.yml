@@ -1,0 +1,137 @@
+networks:
+  internal:
+
+services:
+  # -------------------
+  # File Browser
+  # -------------------
+  filebrowser:
+    container_name: filebrowser
+    build:
+      context: ./filebrowser
+      dockerfile: Dockerfile
+    depends_on:
+      - onlyoffice
+      - codimd
+      - cyberchef
+    environment:
+      FB_AUTH_METHOD: proxy
+      FB_AUTH_HEADER: X-Authentik-Username
+      FB_DEFAULT_USER_PASSWORD: ${FB_DEFAULT_USER_PASSWORD:-changeme-not-used-in-proxy-mode}
+      FB_USERS: ${FB_USERS}
+      FB_BRANDING: ${FB_BRANDING:-Notes}
+      FB_BRANDING_THEME: ${FB_BRANDING_THEME:-dark}
+      FB_ONLYOFFICE_URL: /onlyoffice
+      FB_ONLYOFFICE_JWTSECRET: ${ONLYOFFICE_JWT_SECRET}
+      FB_CODIMD_URL: /md
+      PUID: 1000
+      PGID: 1000
+    volumes:
+      - ${DATA_DIR}/share:/srv
+      - ${DATA_DIR}/database:/database
+    restart: unless-stopped
+    networks:
+      - internal
+
+  # -------------------
+  # Only Office
+  # -------------------
+  onlyoffice:
+    image: onlyoffice/documentserver:latest
+    environment:
+      - JWT_SECRET=${ONLYOFFICE_JWT_SECRET}
+      - USE_UNAUTHORIZED_STORAGE=true
+    networks:
+      - internal
+    restart: unless-stopped
+
+  # -------------------
+  # CodiMD
+  # -------------------
+  codimd:
+    build:
+      context: ./codimd
+      dockerfile: deployments/Dockerfile
+    container_name: codimd
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - CMD_SESSION_SECRET=${CMD_SESSION_SECRET}
+      - CMD_CONFIG_FILE=/home/hackmd/app/config.json
+      - CMD_AUTO_MIGRATE=false
+      - CMD_ALLOW_ANONYMOUS=false
+      - CMD_ALLOW_ANONYMOUS_EDITS=false
+      - CMD_DEFAULT_PERMISSION=limited
+      - CMD_ALLOW_FREEURL=true
+      - CMD_URL_PATH=md
+      - CMD_PROTOCOL_USESSL=false
+      - CMD_HEADER_AUTH=true
+      - CMD_EMAIL=false
+    volumes:
+      - ${DATA_DIR}/share:/home/hackmd/app/public/docs
+    networks:
+      - internal
+
+  # -------------------
+  # CyberChef
+  # -------------------
+  cyberchef:
+    image: ghcr.io/gchq/cyberchef:latest
+    container_name: cyberchef
+    restart: unless-stopped
+    networks:
+      - internal
+
+  oauth2-proxy:
+    image: quay.io/oauth2-proxy/oauth2-proxy:v7.6.0
+    container_name: oauth2-proxy
+    restart: unless-stopped
+    environment:
+      OAUTH2_PROXY_PROVIDER: oidc
+      OAUTH2_PROXY_OIDC_ISSUER_URL: ${OIDC_ISSUER_URL}
+      OAUTH2_PROXY_CLIENT_ID: ${OIDC_CLIENT_ID}
+      OAUTH2_PROXY_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
+      OAUTH2_PROXY_REDIRECT_URL: http://${DNS_NAME}/oauth2/callback
+      OAUTH2_PROXY_COOKIE_SECRET: ${OAUTH2_PROXY_COOKIE_SECRET}
+      OAUTH2_PROXY_COOKIE_SECURE: "false"
+      OAUTH2_PROXY_COOKIE_DOMAINS: ${DNS_NAME}
+      OAUTH2_PROXY_WHITELIST_DOMAINS: ${DNS_NAME}:*
+      OAUTH2_PROXY_EMAIL_DOMAINS: "*"
+      OAUTH2_PROXY_HTTP_ADDRESS: 0.0.0.0:4180
+      OAUTH2_PROXY_REVERSE_PROXY: "true"
+      OAUTH2_PROXY_SKIP_PROVIDER_BUTTON: "true"
+      OAUTH2_PROXY_SET_XAUTHREQUEST: "true"
+      OAUTH2_PROXY_PASS_USER_HEADERS: "true"
+      OAUTH2_PROXY_PASS_ACCESS_TOKEN: "false"
+      OAUTH2_PROXY_UPSTREAMS: static://202
+      OAUTH2_PROXY_SSL_INSECURE_SKIP_VERIFY: "true"
+      OAUTH2_PROXY_INSECURE_OIDC_ALLOW_UNVERIFIED_EMAIL: "true"
+    networks:
+      - internal
+
+  session-bridge:
+    container_name: session-bridge
+    build:
+      context: ./session-bridge
+    restart: unless-stopped
+    environment:
+      SESSION_BRIDGE_SECRET: ${SESSION_BRIDGE_SECRET}
+      OUTPOST_URL: http://oauth2-proxy:4180
+    volumes:
+      - ${DATA_DIR}/session-bridge:/data
+    depends_on:
+      - oauth2-proxy
+    networks:
+      - internal
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile.authentik:/etc/caddy/Caddyfile:ro
+    networks:
+      - internal

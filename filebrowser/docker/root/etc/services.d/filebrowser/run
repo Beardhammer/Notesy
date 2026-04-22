@@ -1,0 +1,32 @@
+#!/usr/bin/with-contenv bash
+FB_DATABASE=${FB_DATABASE:="/database/filebrowser.db"}
+
+echo "
+-------------------------------------
+Filebrowser Initializing
+-------------------------------------
+"
+echo "[-] Database File: $FB_DATABASE"
+
+# Initialize database
+if [ ! -e "$FB_DATABASE" ]; then
+  echo "[*] Database doesn't exist.  Initializing..."
+  timeout 5 s6-setuidgid abc filebrowser -c /config/settings.json -d /database/filebrowser.db
+  s6-setuidgid abc filebrowser -c /config/settings.json -d /database/filebrowser.db users update admin -p "$FB_DEFAULT_USER_PASSWORD"
+else
+  echo "[-] Database ${FB_DATABASE} already exists, skipping initialize..."
+fi
+
+
+# loop and create new users
+if [ -n "$FB_USERS" ]; then
+  for user in $FB_USERS; do
+    echo "[*] Creating user $user..."
+    s6-setuidgid abc filebrowser -c /config/settings.json -d /database/filebrowser.db users add $user "$FB_DEFAULT_USER_PASSWORD" --perm.admin
+  done
+fi
+
+
+# Start filebrowser
+echo '[*] Starting filebrowser'
+exec s6-setuidgid abc filebrowser -c /config/settings.json -d /database/filebrowser.db;

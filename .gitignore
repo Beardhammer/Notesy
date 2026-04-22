@@ -1,0 +1,24 @@
+.env
+*.env.local
+
+# Build artifacts
+filebrowser/filebrowser
+filebrowser/frontend/node_modules/
+filebrowser/frontend/dist/*
+!filebrowser/frontend/dist/.gitkeep
+
+codimd/node_modules/
+codimd/public/build/
+codimd/public/js/vendor/
+codimd/public/views/build/
+
+session-bridge/session-bridge
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

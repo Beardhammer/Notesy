@@ -1,0 +1,81 @@
+(notesy_auth) {
+	forward_auth session-bridge:8080 {
+		uri /authz
+		copy_headers X-Authentik-Username X-Authentik-Email X-Authentik-Groups
+
+		# oauth2-proxy → session-bridge → Caddy chain returns 401 for
+		# unauthenticated users. Convert that to a 302 redirect into the
+		# OIDC authorization flow so browsers land on Authentik's login.
+		@unauth status 401
+		handle_response @unauth {
+			redir * /oauth2/start?rd={http.request.uri} 302
+		}
+	}
+}
+
+:80 {
+	# OIDC flow endpoints (public — oauth2-proxy handles login/callback/sign_out)
+	handle /oauth2/* {
+		reverse_proxy oauth2-proxy:4180
+	}
+
+	# PUBLIC — transfer-code redeem page so offsite users can claim
+	handle /transfer/claim* {
+		reverse_proxy session-bridge:8080
+	}
+
+	# "Generate code" endpoint — auth-gated
+	handle /transfer/new {
+		import notesy_auth
+		reverse_proxy session-bridge:8080
+	}
+
+	# OnlyOffice — auth-protected, prefix stripped
+	handle_path /oo/* {
+		import notesy_auth
+		@versioned path_regexp ^/[0-9]+\.[0-9]+\.[0-9]+-
+		handle @versioned {
+			reverse_proxy onlyoffice:80 {
+				header_up X-Forwarded-Prefix /oo
+			}
+		}
+		handle /cache* {
+			reverse_proxy onlyoffice:80 {
+				header_up X-Forwarded-Prefix /oo
+			}
+		}
+		handle {
+			reverse_proxy onlyoffice:80 {
+				header_up Accept-Encoding ""
+				header_up X-Forwarded-Prefix /oo
+			}
+		}
+	}
+
+	# CodiMD — auth-protected, prefix stripped
+	handle_path /md/* {
+		import notesy_auth
+		reverse_proxy codimd:3000
+	}
+	handle /config {
+		import notesy_auth
+		reverse_proxy codimd:3000
+	}
+	handle /socket.io/* {
+		import notesy_auth
+		reverse_proxy codimd:3000
+	}
+
+	# CyberChef — auth-protected
+	handle_path /cyberchef/* {
+		import notesy_auth
+		reverse_proxy cyberchef:80
+	}
+
+	# FileBrowser — default
+	handle {
+		import notesy_auth
+		reverse_proxy filebrowser:80
+	}
+
+}

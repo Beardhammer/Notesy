@@ -1,0 +1,26 @@
+version: "3"
+services:
+  codimd:
+    build:
+      context: ..
+      dockerfile: ./deployments/Dockerfile
+    environment:
+      - NODE_ENV=development
+      - CMD_SESSION_SECRET=8f176575b6281d4c75ab30106a632dbb
+      - CMD_CONFIG_FILE=/home/hackmd/app/config.json
+      - CMD_DOMAIN=localhost:3000
+      - CMD_AUTO_MIGRATE=false
+      - CMD_ALLOW_ANONYMOUS=true
+      - CMD_ALLOW_ANONYMOUS_EDITS=true
+      - CMD_PROTOCOL_USESSL=false
+      - CMD_DEFAULT_PERMISSION=freely
+      - CMD_ALLOW_FREEURL=true
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./upload-data:/home/hackmd/app/public/uploads
+      - ./opnotes:/home/hackmd/app/public/docs
+      - ./config.json:/home/hackmd/app/config.json:ro
+      - ./database:/home/hackmd/app/database
+      - ./docker-entrypoint.sh:/home/hackmd/app/docker-entrypoint.sh:ro
+    restart: always

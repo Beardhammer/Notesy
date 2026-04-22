@@ -1,0 +1,11 @@
+<script>
+    function scriptfail(element) {
+        alert('Failed to load ' + element.src + '. Please accept the certificate on the following page to prevent future errors.');
+        const newLocation = element.src.match(/[a-zA-Z0-9.]+\.env\d{1,4}/g)
+        window.location.href = "https://" + newLocation;
+    }
+</script>
+<script src="<%= webpackConfig.output.baseUrl %>/config"></script>
+<% for (var js in htmlWebpackPlugin.files.js) { %>
+<script onerror='scriptfail(this);' src="<%= '\<\%= serverURL \%\>'%><%= htmlWebpackPlugin.files.js[js] %>" defer></script>
+<% } %>

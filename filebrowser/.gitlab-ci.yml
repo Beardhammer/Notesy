@@ -1,0 +1,74 @@
+#############################################
+# STAGES
+#############################################
+# Official docker compose image.
+image:
+  name: golang:1.21-alpine
+
+variables:
+  GIT_DEPTH: 50
+  IMAGE_NAME: filebrowser
+  IMAGE_TAG: $CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_PIPELINE_ID
+  DOCKER_DRIVER: overlay2
+  DOCKER_HOST: tcp://docker:2375
+  DOCKER_TLS_CERTDIR: ""
+  COMPOSE_HTTP_TIMEOUT: 300
+  # dev branch
+  STABLE_BRANCH: RTA
+  STABLE_TAG: $CI_REGISTRY_IMAGE/$IMAGE_NAME:latest
+  # all other branches
+  MISC_TAG: $CI_REGISTRY_IMAGE/$IMAGE_NAME:$CI_COMMIT_BRANCH
+
+
+services:
+  - name: docker:dind
+    alias: docker
+    command: ["--tls=false"]
+
+stages:
+  # - test
+  - build
+
+.docker:
+  script:
+  - docker info
+  - docker version
+
+.docker-login:
+  script:
+    - !reference [.docker, script]
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+
+# -------------------
+# BUILD STAGE
+# -------------------
+create image:
+  stage: build
+  tags: [docker]
+  before_script: 
+    - |-
+      set -x
+      apk -q --update add git npm make musl-dev docker bash ncurses
+      go version
+  script:
+    - !reference [.docker-login, script]
+    - |-
+      set -x
+      case $CI_COMMIT_BRANCH in
+        $STABLE_BRANCH)
+          tag=$STABLE_TAG
+          ;;
+
+        *)
+          tag=$MISC_TAG
+          ;;
+      esac
+
+      echo $IMAGE_TAG
+      echo $tag
+      cd frontend/; npm install; cd -
+      make build
+      docker build . -t $tag -t $IMAGE_TAG
+      docker push $tag 
+      docker push $IMAGE_TAG
+      echo -e "###########################################\n\n\e[96m[*] The tag has been pushed:\n==> \e[91m$tag\n==> \e[91m$IMAGE_TAG\e[0m\n\n\n###########################################"

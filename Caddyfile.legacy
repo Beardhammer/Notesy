@@ -1,0 +1,72 @@
+# FileBrowser + OnlyOffice + CodiMD
+:80 {
+	# OnlyOffice — path prefix stripped before proxying.
+	# X-Forwarded-Prefix tells OnlyOffice nginx to include /oo in
+	# redirect URLs so the browser stays within this handler.
+	handle_path /oo/* {
+		# Versioned assets (e.g. /8.1.0-123/web-apps/...)
+		@versioned path_regexp ^/[0-9]+\.[0-9]+\.[0-9]+-
+		handle @versioned {
+			reverse_proxy onlyoffice:80 {
+				header_up X-Forwarded-Prefix /oo
+			}
+		}
+
+		handle /cache* {
+			reverse_proxy onlyoffice:80 {
+				header_up X-Forwarded-Prefix /oo
+			}
+		}
+
+		handle {
+			reverse_proxy onlyoffice:80 {
+				header_up Accept-Encoding ""
+				header_up X-Forwarded-Prefix /oo
+			}
+		}
+	}
+
+	# CodiMD — protected by FileBrowser auth, prefix stripped
+	# CMD_URL_PATH=md makes CodiMD generate /md-prefixed URLs for
+	# the browser, while handle_path strips it before proxying so
+	# CodiMD's own routes (/build, /css, notes) resolve correctly.
+	handle_path /md/* {
+		forward_auth filebrowser:80 {
+			uri /api/resources/?auth={cookie.auth}
+		}
+
+		reverse_proxy codimd:3000
+	}
+
+	# CodiMD generates /config and /socket.io at root (no /md prefix)
+	handle /config {
+		forward_auth filebrowser:80 {
+			uri /api/resources/?auth={cookie.auth}
+		}
+
+		reverse_proxy codimd:3000
+	}
+
+	handle /socket.io/* {
+		forward_auth filebrowser:80 {
+			uri /api/resources/?auth={cookie.auth}
+		}
+
+		reverse_proxy codimd:3000
+	}
+
+	# CyberChef — auth-protected, served at /cyberchef/
+	# handle_path strips the prefix so CyberChef's root-relative
+	# asset paths (/assets, /index.html) resolve inside the container.
+	handle_path /cyberchef/* {
+		forward_auth filebrowser:80 {
+			uri /api/resources/?auth={cookie.auth}
+		}
+		reverse_proxy cyberchef:80
+	}
+
+	# FileBrowser — default catch-all
+	handle {
+		reverse_proxy filebrowser:80
+	}
+}

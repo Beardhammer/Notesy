@@ -1,0 +1,92 @@
+networks:
+  internal:
+
+services:
+  # -------------------
+  # File Browser
+  # -------------------
+  filebrowser:
+    container_name: filebrowser
+    build:
+      context: ./filebrowser
+      dockerfile: Dockerfile
+    depends_on:
+      - onlyoffice
+      - codimd
+      - cyberchef
+    environment:
+      FB_AUTH_METHOD: json
+      FB_DEFAULT_USER_PASSWORD: ${FB_DEFAULT_USER_PASSWORD:-changeme}
+      FB_USERS: ${FB_USERS}
+      FB_BRANDING: ${FB_BRANDING:-Notes}
+      FB_BRANDING_THEME: ${FB_BRANDING_THEME:-dark}
+      FB_ONLYOFFICE_URL: /onlyoffice
+      FB_ONLYOFFICE_JWTSECRET: ${ONLYOFFICE_JWT_SECRET}
+      FB_CODIMD_URL: /md
+      PUID: 1000
+      PGID: 1000
+    volumes:
+      - ${DATA_DIR}/share:/srv
+      - ${DATA_DIR}/database:/database
+    restart: unless-stopped
+    networks:
+      - internal
+
+  # -------------------
+  # Only Office
+  # -------------------
+  onlyoffice:
+    image: onlyoffice/documentserver:latest
+    environment:
+      - JWT_SECRET=${ONLYOFFICE_JWT_SECRET}
+      - USE_UNAUTHORIZED_STORAGE=true
+    networks:
+      - internal
+    restart: unless-stopped
+
+  # -------------------
+  # CodiMD
+  # -------------------
+  codimd:
+    build:
+      context: ./codimd
+      dockerfile: deployments/Dockerfile
+    container_name: codimd
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=development
+      - CMD_SESSION_SECRET=${CMD_SESSION_SECRET}
+      - CMD_CONFIG_FILE=/home/hackmd/app/config.json
+      - CMD_AUTO_MIGRATE=false
+      - CMD_ALLOW_ANONYMOUS=true
+      - CMD_ALLOW_ANONYMOUS_EDITS=true
+      - CMD_DEFAULT_PERMISSION=freely
+      - CMD_ALLOW_FREEURL=true
+      - CMD_URL_PATH=md
+      - CMD_PROTOCOL_USESSL=false
+    volumes:
+      - ${DATA_DIR}/share:/home/hackmd/app/public/docs
+    networks:
+      - internal
+
+  # -------------------
+  # CyberChef
+  # -------------------
+  cyberchef:
+    image: ghcr.io/gchq/cyberchef:latest
+    container_name: cyberchef
+    restart: unless-stopped
+    networks:
+      - internal
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile.legacy:/etc/caddy/Caddyfile:ro
+    networks:
+      - internal
