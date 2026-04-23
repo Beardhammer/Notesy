@@ -1,10 +1,11 @@
 <template>
-  <div class="board-switcher" v-if="boards.length > 0" ref="switcher">
-    <button class="board-current" @click="toggleDropdown">
+  <div class="board-switcher" ref="switcher">
+    <button class="board-current" v-if="boards.length > 0" @click="toggleDropdown">
       <i class="material-icons">dashboard</i>
       <span class="board-name">{{ currentBoardName }}</span>
       <i class="material-icons arrow">arrow_drop_down</i>
     </button>
+    <span class="board-empty-hint" v-else>No boards yet</span>
 
     <button class="board-add" @click="showCreate" title="New Board">
       <i class="material-icons">add</i>
@@ -247,6 +248,13 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.board-empty-hint {
+  font-size: 0.8em;
+  color: var(--textSecondary, #999);
+  font-style: italic;
+  padding: 0 0.35em;
 }
 
 .board-add {

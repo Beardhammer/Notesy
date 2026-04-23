@@ -5,7 +5,16 @@
       <action icon="file_download" label="Export Backup" @action="exportBackup" />
     </header-bar>
 
-    <div class="kanban-board">
+    <div class="kanban-empty" v-if="noBoards">
+      <i class="material-icons">dashboard</i>
+      <p>You don't have any boards yet.</p>
+      <p>
+        Click the <i class="material-icons inline-icon">add</i> button in the
+        header to create your first board.
+      </p>
+    </div>
+
+    <div class="kanban-board" v-else>
       <div
         class="kanban-column"
         :class="'kanban-column--' + col.id"
@@ -160,6 +169,9 @@ export default {
     isAllBoards() {
       return this.boardId === "all";
     },
+    noBoards() {
+      return (this.$store.state.boards || []).length === 0;
+    },
   },
   watch: {
     boardId() {
@@ -234,6 +246,10 @@ export default {
           await kanbanApi.updateTask(this.boardId, this.editingId, payload);
         } else {
           const bid = this.isAllBoards ? this.$store.state.boards[0]?.id : this.boardId;
+          if (!bid) {
+            this.$showError(new Error("Create a board before adding tasks."));
+            return;
+          }
           await kanbanApi.createTask(bid, payload);
         }
         await this.loadTasks();
@@ -346,6 +362,36 @@ export default {
   flex: 1;
   overflow-x: auto;
   min-height: 0;
+}
+
+.kanban-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--textSecondary, #757575);
+  padding: 2em;
+  gap: 0.25em;
+}
+
+.kanban-empty .material-icons {
+  font-size: 56px;
+  color: var(--divider, #bbb);
+  margin-bottom: 0.25em;
+}
+
+.kanban-empty .inline-icon {
+  font-size: 16px;
+  vertical-align: middle;
+  color: inherit;
+  margin: 0 0.1em;
+}
+
+.kanban-empty p {
+  margin: 0.15em 0;
+  font-size: 0.95em;
 }
 
 .kanban-column {
