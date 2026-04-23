@@ -235,7 +235,7 @@ func (i *FileInfo) detectType(modify, saveContent, readHeader bool) error {
 	}
 
 	onlyOfficeExtensions := []string{".docx", ".xlsx", ".pptx", ".csv", ".ods", ".odt", ".odp", ".rtf", ".doc", ".xls", ".ppt"}
-	codiMdExtensions := []string{".md"}
+	codiMdExtensions := []string{".md", ".txt"}
 	drawIOExtensions := []string{".drawio"}
 
 	switch {
