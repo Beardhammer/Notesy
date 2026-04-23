@@ -34,7 +34,45 @@ You do **not** need Go or Node installed locally — both `filebrowser` and
 
 ## Quick start
 
-### 1. Configure
+The fastest path is the interactive installer. If you'd rather wire everything
+up by hand, skip to [Manual setup](#manual-setup).
+
+### Scripted — `setup.sh`
+
+```bash
+./setup.sh
+```
+
+`setup.sh` walks you through the whole bring-up:
+
+1. **Pre-flight checks** — verifies Docker 24+, the Compose plugin, a running
+   Docker daemon, and `openssl`. Bails early with a clear message if anything
+   is missing.
+2. **Mode selection** — prompts for `legacy` or `authentik` and confirms the
+   matching compose file is present.
+3. **Configuration** — asks for `DATA_DIR`, `FB_USERS`, branding, and the
+   mode-specific values (`FB_DEFAULT_USER_PASSWORD` for legacy; `DNS_NAME`
+   plus `OIDC_CLIENT_ID` / `OIDC_CLIENT_SECRET` / `OIDC_ISSUER_URL` for
+   authentik). Leave the legacy password blank to have one generated and
+   printed.
+4. **Secret generation** — mints `ONLYOFFICE_JWT_SECRET`, `CMD_SESSION_SECRET`,
+   and (authentik only) `SESSION_BRIDGE_SECRET` and
+   `OAUTH2_PROXY_COOKIE_SECRET` via `openssl rand`.
+5. **Writes `.env`** with mode `0600`. If one already exists it prompts and
+   backs it up to `.env.bak.<timestamp>`.
+6. **Creates `DATA_DIR`** and its subdirectories (`share`, `database`, plus
+   `session-bridge` in authentik mode) and `chown -R 1000:1000`s them — the
+   UID/GID the containers run as. Escalates via `sudo` only if needed.
+7. **Optional bring-up** — offers to run
+   `docker compose -f docker-compose.<mode>.yml up -d --build` immediately,
+   and prints the URL plus the commands to tail logs or stop the stack.
+
+Re-running `setup.sh` is safe: it backs up existing `.env` files and skips
+data directories that already exist.
+
+### Manual setup
+
+#### 1. Configure
 
 ```bash
 cp .env.example .env
@@ -60,7 +98,7 @@ For **Legacy** mode also set:
 
 - `FB_DEFAULT_USER_PASSWORD` — initial password for every user in `FB_USERS`
 
-### 2. Create the data directory
+#### 2. Create the data directory
 
 ```bash
 sudo mkdir -p "${DATA_DIR}"/{share,database,session-bridge}
@@ -70,7 +108,7 @@ sudo chown -R 1000:1000 "${DATA_DIR}"
 `1000:1000` is the UID/GID that runs inside the FileBrowser and CodiMD
 containers.
 
-### 3. Bring it up
+#### 3. Bring it up
 
 **Legacy (FileBrowser auth):**
 
@@ -87,7 +125,7 @@ docker compose -f docker-compose.authentik.yml up -d --build
 The first build downloads Go and Node base images and compiles the
 FileBrowser frontend + backend; expect 3–5 minutes on a cold cache.
 
-### 4. Log in
+### Log in
 
 Browse to `http://${DNS_NAME}/`.
 
@@ -175,6 +213,7 @@ share container names, so they cannot run simultaneously.
 ├── docker-compose.authentik.yml
 ├── docker-compose.legacy.yml
 ├── .env.example
+├── setup.sh                   # interactive installer (prereqs, .env, dirs, bring-up)
 ├── filebrowser/                # FileBrowser (Go + Vue), built in Docker
 ├── codimd/                     # CodiMD (Node), built in Docker
 └── session-bridge/             # tiny Go service for OIDC-bridging + transfer codes
