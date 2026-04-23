@@ -7,6 +7,7 @@ import (
 	"github.com/filebrowser/filebrowser/v2/kanban"
 	"github.com/filebrowser/filebrowser/v2/settings"
 	"github.com/filebrowser/filebrowser/v2/share"
+	"github.com/filebrowser/filebrowser/v2/shout"
 	"github.com/filebrowser/filebrowser/v2/users"
 )
 
@@ -20,4 +21,5 @@ type Storage struct {
 	Kanban   *kanban.Storage
 	Events   *event.Storage
 	Boards   *board.Storage
+	Shouts   *shout.Storage
 }

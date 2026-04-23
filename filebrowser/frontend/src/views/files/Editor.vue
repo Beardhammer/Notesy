@@ -103,6 +103,14 @@ export default {
     if (theme == "dark") {
       this.editor.setTheme("ace/theme/twilight");
     }
+
+    this.$nextTick(() => {
+      const line = parseInt(this.$route.query.line, 10);
+      if (!Number.isNaN(line) && line > 0 && this.editor) {
+        this.editor.gotoLine(line, 0, true);
+        this.editor.scrollToLine(line, true, true);
+      }
+    });
   },
   methods: {
     back() {

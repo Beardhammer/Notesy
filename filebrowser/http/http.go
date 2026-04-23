@@ -105,6 +105,10 @@ func NewHandler(
 	api.Handle("/boards/{boardId}/events/{id:[0-9]+}", monkey(boardEventPutHandler, "")).Methods("PUT")
 	api.Handle("/boards/{boardId}/events/{id:[0-9]+}", monkey(boardEventDeleteHandler, "")).Methods("DELETE")
 
+	api.Handle("/shouts", monkey(shoutPostHandler, "")).Methods("POST")
+	api.Handle("/shouts", monkey(shoutListHandler, "")).Methods("GET")
+	api.Handle("/shouts/stream", monkey(shoutStreamHandler, "")).Methods("GET")
+
 	// Legacy routes (keep for backward compat)
 	api.Handle("/kanban", monkey(kanbanListHandler, "")).Methods("GET")
 	api.Handle("/kanban/{id:[0-9]+}", monkey(kanbanGetHandler, "")).Methods("GET")

@@ -2052,9 +2052,11 @@ socket.on('refresh', function (data) {
     if (nocontent) {
       if (visibleXS) { appState.currentMode = modeType.edit } else { appState.currentMode = modeType.both }
     }
-    // parse mode from url
+    // parse mode from url — take the first query segment so extra params like
+    // &line=N don't break mode detection (e.g., ?edit&line=5 still picks edit).
     if (window.location.search.length > 0) {
-      var urlMode = modeType[window.location.search.substr(1)]
+      var modeName = window.location.search.substr(1).split('&')[0]
+      var urlMode = modeType[modeName]
       if (urlMode) appState.currentMode = urlMode
     }
     changeMode(appState.currentMode)
@@ -2103,6 +2105,51 @@ socket.on('doc', function (obj) {
     editor.clearHistory()
     ui.spinner.hide()
     ui.content.fadeIn()
+    // Jump to ?line=<n> if provided by the host (filebrowser shoutbox line-link).
+    // Optionally also highlight ?text=<snippet> on that line.
+    try {
+      var params = new URLSearchParams(window.location.search)
+      var lineParam = params.get('line')
+      var textParam = params.get('text') || ''
+      if (lineParam) {
+        var line = parseInt(lineParam, 10)
+        if (!isNaN(line) && line > 0) {
+          var doJump = function () {
+            try {
+              var targetLine = Math.max(0, Math.min(line - 1, editor.lineCount() - 1))
+              // If we have a snippet, try to land the selection exactly on it.
+              var from = { line: targetLine, ch: 0 }
+              var to = from
+              if (textParam) {
+                var lineContent = editor.getLine(targetLine) || ''
+                var ch = lineContent.indexOf(textParam)
+                if (ch >= 0) {
+                  from = { line: targetLine, ch: ch }
+                  to = { line: targetLine, ch: ch + textParam.length }
+                }
+              }
+              editor.focus()
+              editor.refresh()
+              editor.setSelection(from, to, { scroll: true })
+              // Manual pixel-scroll for editors where setSelection's scroll lags.
+              var coords = editor.charCoords(from, 'local')
+              var scroller = editor.getScrollerElement()
+              if (scroller.clientHeight > 0) {
+                var targetTop = Math.max(0, coords.top - (scroller.clientHeight / 3))
+                editor.scrollTo(null, targetTop)
+              }
+            } catch (err) {
+              // ignore — jump is best-effort
+            }
+          }
+          // Fire a few times to survive CodiMD's fade-in animation and late layout shifts.
+          setTimeout(doJump, 500)
+          setTimeout(doJump, 1500)
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
   } else {
     // if current doc is equal to the doc before disconnect
     if (setDoc && bodyMismatch) editor.clearHistory()

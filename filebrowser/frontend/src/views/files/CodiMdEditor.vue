@@ -11,7 +11,7 @@
     </header-bar>
 
     <div id="editor" class="iframe-container">
-      <iframe :src="codi_file_url" frameborder="0"></iframe>
+      <iframe ref="iframe" :src="codi_file_url" frameborder="0"></iframe>
     </div>
   </div>
 </template>
@@ -75,8 +75,20 @@ export default {
       const noteId       = encodeURIComponent(parts.join('/'));
       const baseUrl      = codiMd.url.replace(/\/+$/, '');
       const fullUrl      = baseUrl + "/" + noteId + "?edit";
-      return fullUrl;
+      const line         = this.$route.query.line;
+      const text         = this.$route.query.text;
+      const extra        = [];
+      if (line) extra.push(`line=${encodeURIComponent(line)}`);
+      if (text) extra.push(`text=${encodeURIComponent(text)}`);
+      return extra.length ? `${fullUrl}&${extra.join("&")}` : fullUrl;
     }
+  },
+  watch: {
+    codi_file_url(newUrl) {
+      if (this.$refs.iframe) {
+        this.$refs.iframe.src = newUrl;
+      }
+    },
   },
   methods: {
     close() {

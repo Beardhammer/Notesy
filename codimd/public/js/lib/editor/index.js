@@ -259,6 +259,32 @@ export default class Editor {
       utils.insertText(this.editor, '> []')
     })
 
+    $(document).on('click', '#attachToShoutbox', (e) => {
+      e.preventDefault()
+      // If the user selected text, anchor the link to the first selected line
+      // and include the selection as a quoted snippet.
+      const selection = this.editor.getSelection()
+      const from = this.editor.getCursor('from')
+      const line = from.line + 1 // 1-indexed
+      // Extract file path from the codimd URL:
+      //   /md/docs/README?edit&line=N   ->   path "docs/README.md"
+      const raw = window.location.pathname.replace(/^\/+/, '')
+      const noteId = raw.split('/').slice(1).join('/') // strip the "md" (or equivalent) prefix
+      if (!noteId) return
+      const path = decodeURIComponent(noteId) + '.md'
+      // Trim the selection to a single-line snippet for the chat message.
+      let snippet = ''
+      if (selection) {
+        const firstLine = selection.split('\n')[0].trim()
+        if (firstLine.length > 0) {
+          snippet = firstLine.length > 120 ? firstLine.slice(0, 117) + '…' : firstLine
+        }
+      }
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'shoutbox.attachLine', path, line, snippet }, '*')
+      }
+    })
+
     var $ccMenu = $('#ccMenu .dropdown-menu')
     $(document).on('click', '#ccMenuToggle', function (e) {
       e.preventDefault()

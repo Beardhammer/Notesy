@@ -9,6 +9,7 @@ import (
 	"github.com/filebrowser/filebrowser/v2/kanban"
 	"github.com/filebrowser/filebrowser/v2/settings"
 	"github.com/filebrowser/filebrowser/v2/share"
+	"github.com/filebrowser/filebrowser/v2/shout"
 	"github.com/filebrowser/filebrowser/v2/storage"
 	"github.com/filebrowser/filebrowser/v2/users"
 )
@@ -22,6 +23,7 @@ func NewStorage(db *storm.DB) (*storage.Storage, error) {
 	kanbanStore := kanban.NewStorage(kanbanBackend{db: db})
 	eventStore := event.NewStorage(eventBackend{db: db})
 	boardStore := board.NewStorage(boardBackend{db: db})
+	shoutStore := shout.NewStorage(shoutBackend{db: db})
 
 	err := save(db, "version", 2) //nolint:gomnd
 	if err != nil {
@@ -36,5 +38,6 @@ func NewStorage(db *storm.DB) (*storage.Storage, error) {
 		Kanban:   kanbanStore,
 		Events:   eventStore,
 		Boards:   boardStore,
+		Shouts:   shoutStore,
 	}, nil
 }
