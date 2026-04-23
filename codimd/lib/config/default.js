@@ -60,7 +60,7 @@ module.exports = {
   // toobusy-js
   responseMaxLag: 70,
   // document
-  documentMaxLength: 100000,
+  documentMaxLength: 500000,
   // image upload setting, available options are imgur/s3/filesystem/azure/lutim
   imageUploadType: 'filesystem',
   lutim: {
